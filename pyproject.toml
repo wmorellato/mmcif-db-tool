@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "mmcif_db_tool"
+version = "0.1.0"
+description = "A tool for generating SQLAlchemy models from mmCIF categories"
+authors = ["Weslley Morellato Bueno <wbueno@ebi.ac.uk>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "mmcif_db_tool"}]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+click = "^8.0.0"
+sqlalchemy = "^1.4.0"
+
+[tool.poetry.scripts]
+mmcif-db-tool = "mmcif_db_tool.cli:process_categories"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

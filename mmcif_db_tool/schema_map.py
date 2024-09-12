@@ -1,0 +1,178 @@
+import sys
+import logging
+
+logger = logging.getLogger(__name__)
+
+TYPE_MAP = {
+    "text": ("tinytext",),
+    "line": ("varchar", 128),
+    "float": ("float",),
+    "ucode": ("varchar", 10),
+    "code": ("varchar", 20),
+    "uline": ("varchar", 50),
+    "int": ("int",),
+    "uchar5": ("varchar", 6),
+    "orcid_id": ("varchar", 20),
+    "yyyy-mm-dd:hh:mm": ("date",),
+    "pdbx_PDB_obsoleted_db_id": ("tinytext",),
+    "pdbx_related_db_id": ("varchar", 80),
+    "ec-type": ("varchar", 10),
+    "uchar1": ("varchar", 2),
+    "yyyy-mm-dd": ("datetime",),
+    "3x4_matrix": ("tinytext",),
+    "operation_expression": ("varchar", 511),
+    "author": ("varchar", 150),
+    "positive_int": ("int",),
+    "atcode": ("varchar", 6),
+    "symop": ("varchar", 10),
+    "fax": ("varchar", 25),
+    "phone": ("varchar", 25),
+    "email": ("varchar", 80),
+    "yyyy-mm-dd:hh:mm-flex": ("datetime",),
+    "float-range": ("varchar", 30),
+    "ucode-alphanum-csv": ("varchar", 25),
+    "exp_data_doi": ("varchar", 80),
+    "int-range": ("varchar", 20),
+    "pdb_id_u": ("varchar", 20),
+    "asym_id": ("varchar", 80),
+    "point_group_helical": ("varchar", 5),
+    "point_group": ("varchar", 20),
+    "emd_id": ("varchar", 15),
+    "boolean": ("varchar", 80),
+    "pdb_id": ("varchar", 20),
+    "3x4_matrices": ("varchar", 10),
+    "symmetry_operation": ("varchar", 80),
+    "id_list_spc": ("varchar", 200),
+    "name": ("varchar", 80),
+    "entity_id_list": ("tinytext",),
+    "uniprot_ptm_id": ("varchar", 20),
+    "binary": ("tinytext",),
+}
+
+IMPORTS = [
+    "from typing import List", 
+    "from typing import Optional", 
+    "from sqlalchemy import ForeignKey", 
+    "from sqlalchemy import String", 
+    "from sqlalchemy.orm import DeclarativeBase", 
+    "from sqlalchemy.orm import Mapped", 
+    "from sqlalchemy.orm import mapped_column", 
+    "from sqlalchemy.orm import relationship", 
+]
+
+SQLALCHEMY_SETUP = ["class Base(DeclarativeBase):", "    pass"]
+
+
+def snakecase_to_camelcase(snake_str):
+    components = snake_str.split('_')
+    return ''.join(x.title() for x in components)
+
+
+class Table:
+    def __init__(self, name, columns):
+        self.name = name
+        self.columns = columns
+
+    def __str__(self):
+        class_name = snakecase_to_camelcase(self.name)
+        class_template = f"""class {class_name}(Base):
+    __tablename__ = '{self.name}'\n\n"""
+        
+        for column in self.columns:
+            class_template += f"    {column}\n"
+        
+        return class_template
+
+
+class Column:
+    def __init__(self, name, type, subtype = None, index=False, nullable=True, default=None):
+        self.name = name
+        self.type = type
+        self.subtype = subtype
+        self.index = index
+        self.nullable = nullable
+        self.default = default
+
+    def __str__(self):
+        params = []
+        if self.index:
+            params.append("primary_key=True")
+        if self.subtype:
+            params.append(f"type_={self.subtype}")
+        if self.default is not None:
+            params.append(f'default="{self.default!r}"')
+
+        params_str = ", ".join(params)
+        if self.nullable:
+            return f'{self.name}: Mapped[Optional[{self.type}]] = mapped_column({params_str})'
+        else:
+            return f'{self.name}: Mapped[{self.type}] = mapped_column({params_str})'
+
+
+class SqlAlchemyPrinter:
+    def __init__(self, fp = sys.stdout, include_imports=False):
+        self._fp = fp
+        self._include_imports = include_imports
+        self._tables = []
+
+    def add_table(self, table):
+        self._tables.append(table)
+
+    def print(self):
+        if self._include_imports:
+            for i in IMPORTS:
+                self._fp.write(i + "\n")
+            self._fp.write("\n\n")
+
+        for i in SQLALCHEMY_SETUP:
+            self._fp.write(i + "\n")
+        self._fp.write("\n\n")
+
+        for table in self._tables:
+            self._fp.write(str(table) + "\n\n")
+
+
+class SchemaMap:
+    def __init__(self, printer, ignore_relationships=False):
+        self._printer = printer
+        self._ignore_relationships = ignore_relationships
+        self._categories = []
+
+    def add_categories(self, categories):
+        for category in categories:
+            self._categories.append(category)
+
+    def print_models(self):
+        for c in self._categories:
+            columns = []
+            for item in c.items:
+                itype, istype = self._type_map(item.type_code)
+
+                if not itype:
+                    logger.warning(f"Unknown type for {item.name}: {item.type_code}")
+                    continue
+
+                column = Column(item.name, itype, istype, index=item.index, nullable=item.mandatory_code, default=item.default_value)
+                columns.append(column)
+
+            table = Table(c.id, columns)
+            self._printer.add_table(table)
+        
+        self._printer.print()
+    
+    def _type_map(self, itype_code):
+        if itype_code in TYPE_MAP:
+            if TYPE_MAP[itype_code][0] == "varchar":
+                return "str", f"String({TYPE_MAP[itype_code][1]})"
+            
+            if TYPE_MAP[itype_code][0] == "tinytext":
+                return "str", 255
+        
+            if TYPE_MAP[itype_code][0] == "datetime":
+                return "datetime.datetime", None
+            
+            if TYPE_MAP[itype_code][0] == "date":
+                return "datetime.date", None
+
+            return TYPE_MAP[itype_code][0], None
+        return None, None

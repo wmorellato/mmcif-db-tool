@@ -1,0 +1,44 @@
+_audit_author.address: text, tinytext
+_audit_author.name: line, varchar, 128
+_chem_comp.formula_weight: float, float
+_chem_comp.mon_nstd_flag: ucode, varchar, 10
+_chem_comp.mon_nstd_parent: code, varchar, 20
+_chem_comp.mon_nstd_parent_comp_id: uline, 50
+_chem_comp.number_atoms_all: int, int
+_chem_comp.three_letter_code: uchar5, varcha, 6
+_citation_author.identifier_ORCID: orcid_id, varchar, 20
+_pdbx_database_PDB_obs_spr.date: yyyy-mm-dd:hh:mm, date
+_pdbx_database_PDB_obs_spr.replace_pdb_id: pdbx_PDB_obsoleted_db_id, tinytext
+_pdbx_database_related.db_id: pdbx_related_db_id, varchar, 80
+_entity.pdbx_ec: ec-type, varchar, 10
+_struct.pdbx_CASP_flag: uchar1, varchar, 2
+_chem_comp.pdbx_initial_date: yyyy-mm-dd, datetime
+_pdbx_struct_oper_list.full_matrix: 3x4_matrix, tinytext
+_pdbx_struct_assembly_gen.oper_expression: operation_expression, varchar, 511
+_em_author_list.author: author, varchar, 150
+_em_author_list.ordinal: positive_int, int
+# ---
+_atom_site.auth_atom_id: atcode, varchar, 6
+_geom_angle.site_symmetry_1: symop, varchar, 10
+_pdbx_database_message.sender_address_fax: fax, varchar, 25
+_pdbx_database_message.sender_address_phone: phone, varchar, 25
+_pdbx_database_message.sender_address_email: email, varchar, 80
+_diffrn_detector.pdbx_collection_date: yyyy-mm-dd:hh:mm-flex, datetime
+_pdbx_nmr_exptl_sample.concentration_range: float-range, varchar, 30
+_pdbx_struct_group_list.group_enumeration_type: ucode-alphanum-csv, varchar, 25
+_pdbx_related_exp_data_set.data_reference: exp_data_doi, varchar, 80
+_em_image_scans.used_frames_per_image: int-range, varchar, 20
+_em_3d_fitting_list.pdb_entry_id: pdb_id_u, varchar, 20
+_em_3d_fitting_list.pdb_chain_id: asym_id, varchar, 80
+_em_helical_entity.axial_symmetry: point_group_helical, varchar, 5
+_em_single_particle_entity.point_symmetry: point_group, varchar, 20
+_em_obsolete.entry: emd_id, varchar, 15
+_em_specimen.embedding_applied: boolean, varchar, 80
+_em_start_model.pdb_id: pdb_id, varchar, 20
+_pdbx_struct_assembly_gen_depositor_info.full_matrices: 3x4_matrices, varchar, 10
+_pdbx_struct_assembly_gen_depositor_info.symmetry_operation: symmetry_operation, varchar, 80
+_pdbx_struct_assembly_gen_depositor_info.chain_id_list: id_list_spc, varchar, 200
+_pdbx_view_item.item_name: name, varchar, 80
+_pdbx_initial_refinement_model.entity_id_list: entity_id_list, tinytext
+_pdbx_chem_comp_pcm.uniprot_specific_ptm_accession: uniprot_ptm_id, varchar, 20
+_array_data.data: binary, tinytext
