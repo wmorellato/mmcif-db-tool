@@ -2,7 +2,7 @@ import click
 import logging
 
 from mmcif_db_tool.mmcif_dict import DictReader
-from mmcif_db_tool.schema_map import SchemaMap, SqlAlchemyPrinter
+from mmcif_db_tool.schema_map import SchemaMap, SqlAlchemyOrmPrinter
 
 # logging.basicConfig(level=logging.DEBUG)
 logging.getLogger("mmcif_dict").setLevel(logging.DEBUG)
@@ -20,12 +20,12 @@ def process_categories(input_dict, categories, output_file):
 
     if output_file:
         with open(output_file, "w") as f:
-            mp = SqlAlchemyPrinter(fp=f, include_imports=True)
+            mp = SqlAlchemyOrmPrinter(fp=f, include_imports=True)
             sm = SchemaMap(printer=mp, ignore_relationships=True)
             sm.add_categories(categories)
             sm.print_models()
     else:
-        mp = SqlAlchemyPrinter(include_imports=True)
+        mp = SqlAlchemyOrmPrinter(include_imports=True)
         sm = SchemaMap(printer=mp, ignore_relationships=True)
         sm.add_categories(categories)
         sm.print_models()

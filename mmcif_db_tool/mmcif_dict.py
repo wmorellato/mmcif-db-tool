@@ -24,11 +24,11 @@ class Item:
 class Category:
     id: str
     description: str
-    key_name: str
+    key_names: list[str]
     items: list[Item] = field(default_factory=list)
 
     def add_item(self, item: Item):
-        if item.name == self.key_name:
+        if item.name in self.key_names:
             item.index = True
         self.items.append(item)
 
@@ -126,11 +126,18 @@ class DictReader:
     def _parse_category(self, frame):
         id = frame.name
         description = self._strip_value(frame.find_value('_category.description'))
-        key_name = frame.find_value('_category_key.name')
-        if key_name:
-            key_name = self._strip_value(key_name).split('.')[1]
+        key_names = []
+        if frame.find_value('_category_key.name'):
+            kn = frame.find_value('_category_key.name')
+            key_names.append(self._strip_value(kn).split('.')[1])
+        else:
+            # try to find in a loop
+            table = frame.find_loop("_category_key.name")
+            if table:
+                for row in table:
+                    key_names.append(self._strip_value(row).split('.')[1])
 
-        return Category(id, description, key_name)
+        return Category(id, description, key_names)
 
     def _strip_value(self, value):
         if value is None:
