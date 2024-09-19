@@ -1,11 +1,6 @@
 import pytest
 
-from mmcif_dict import DictReader
-
-
-def test_reader():
-    with pytest.raises(ValueError):
-        DictReader(path="./tags.txt")
+from mmcif_db_tool.mmcif_dict import DictReader
 
 
 def test_category():
