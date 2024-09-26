@@ -1,6 +1,4 @@
-Here is the Markdown documentation for the provided CLI:
-
-# CLI Documentation for `mmcif_db_tool`
+# `mmcif_db_tool`
 
 This command-line interface (CLI) processes categories from an MMCIF dictionary and provides options for including/excluding certain items or categories. The user can choose between two different models: `orm` and `core`.
 
