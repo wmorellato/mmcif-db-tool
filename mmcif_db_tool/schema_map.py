@@ -61,7 +61,7 @@ ORM_IMPORTS = [
 ]
 
 CORE_IMPORTS = [
-    "from sqlalchemy import MetaData, Table, Column, Integer, String, Float"
+    "from sqlalchemy import MetaData, Table, Column, Integer, String, Float, DateTime"
 ]
 
 ORM_SETUP = ["class Base(DeclarativeBase):", "    pass"]
@@ -135,8 +135,8 @@ class SqlAlchemyCorePrinter:
         self._fp.write("\n\n")
 
         for table in self._tables:
-            self._fp.write(self._table_text(table) + "\n\n")
-
+            self._fp.write(self._table_text(table) + "\n")
+            self._fp.write("\n\n")
 
 class SqlAlchemyOrmPrinter:
     def __init__(self, fp = sys.stdout, include_imports=False):
@@ -206,7 +206,7 @@ class SchemaMap:
                     logger.warning(f"Unknown type for {item.name}: {item.type_code}")
                     continue
 
-                column = Column(item.name, itype, istype, index=item.index, nullable=item.mandatory_code, default=item.default_value)
+                column = Column(item.name, itype, istype, index=item.index, nullable=not item.mandatory_code, default=item.default_value)
                 columns.append(column)
 
             table = Table(c.id, columns)

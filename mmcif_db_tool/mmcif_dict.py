@@ -6,6 +6,23 @@ from dataclasses import dataclass, field
 logger = logging.getLogger(__name__)
 
 
+class ItemFilter:
+    def __init__(self, include_items: list[str] = [], exclude_items: set[str] = []):
+        self.filtered_categories = set()
+        self.include_items = set(include_items)
+        self.exclude_items = set(exclude_items)
+        self._set_filtered_cats()
+
+    def _set_filtered_cats(self):
+        for i in self.include_items:
+            cat, _ = i.split('.')
+            self.filtered_categories.add(cat)
+
+        for i in self.exclude_items:
+            cat, _ = i.split('.')
+            self.filtered_categories.add(cat)
+
+
 @dataclass
 class Item:
     full_name: str
@@ -27,7 +44,17 @@ class Category:
     key_names: list[str]
     items: list[Item] = field(default_factory=list)
 
-    def add_item(self, item: Item):
+    def add_item(self, item: Item, filter: ItemFilter = None):
+        if self.id in filter.filtered_categories:
+            cat_item = f"{self.id}.{item.name}"
+            if filter.include_items and cat_item not in filter.include_items:
+                print(f"Skipping item {cat_item}")
+                return
+
+            if filter.exclude_items and cat_item in filter.exclude_items:
+                print(f"Skipping item {cat_item}")
+                return
+
         if item.name in self.key_names:
             item.index = True
         self.items.append(item)
@@ -37,52 +64,44 @@ class DictReader:
     def __init__(self, path: str) -> None:
         self._doc = cif.read_file(path)
 
-    def get_categories(self, categories: list[str]) -> list[Category]:
-        cat_objs = []
-        block = self._doc.sole_block()
+    def get_categories(self, categories: list[str], filter: ItemFilter = None) -> list[Category]:
+        cat_objs = {}
         search_set = set(categories)
+        filter = filter or ItemFilter()
+        block = self._doc.sole_block()
         grouped_items = self._find_grouped_items(block, search_set)
 
-        current_category = None
         for i in block:
+            # first iteration is to create the category objects
             if i.frame is None:
                 continue
 
             frame = i.frame
             if frame.name in search_set:
                 logger.debug(f"Found category {frame.name}")
+                cat_objs[frame.name] = self._parse_category(frame)
 
-                if current_category is not None:
-                    cat_objs.append(current_category)
-
-                current_category = self._parse_category(frame)
+        for i in block:
+            if i.frame is None:
                 continue
 
-            if current_category is None:
-                continue
-
-            if self._cat_from_frame(frame.name) != current_category.id:
-                logger.debug(f"Finished category {current_category.id}. Frame name: {frame.name}")
-                cat_objs.append(current_category)
-                current_category = None
+            frame = i.frame
+            cat_name = self._cat_from_frame(frame.name)
+            if cat_name not in search_set:
                 continue
 
             if frame.name in grouped_items:
                 logger.debug(f"Found grouped item {frame.name}")
-                current_category.add_item(grouped_items[frame.name])
+                cat_objs[cat_name].add_item(grouped_items[frame.name], filter)
                 continue
 
             if frame.find_value("_item.name"):
                 logger.debug(f"Found item {frame.name}")
                 item = self._parse_item(frame)
-                current_category.add_item(item)
+                cat_objs[cat_name].add_item(item, filter)
                 continue
 
-        if current_category is not None:
-            # I think this can happen for the last category
-            # in the dictionary
-            cat_objs.append(current_category)
-        return cat_objs
+        return list(cat_objs.values())
 
     def _cat_from_frame(self, frame_name):
         if frame_name is not None:
@@ -144,16 +163,3 @@ class DictReader:
             return None
 
         return value.strip('"').strip(";").strip()
-
-
-# table infos
-# description: _category.description
-# name: _category.id
-# index: _category_key.name
-
-# column infos
-# name: _item.name
-# type: _item_type.code 
-# nullable: _item.mandatory_code
-# default value: _item_default.value
-# foreign key: _item_linked.child_name

@@ -1,6 +1,6 @@
 import pytest
 
-from mmcif_db_tool.mmcif_dict import DictReader
+from mmcif_db_tool.mmcif_dict import DictReader, ItemFilter
 
 
 def test_category():
@@ -80,3 +80,27 @@ def test_last_category():
     assert categories[0].items[2].name == "reference_center_fast"
     assert categories[0].items[3].name == "reference_center_slow"
     assert categories[0].items[4].name == "reference_center_units"
+
+
+def test_filter_included():
+    cr = DictReader(path="./mmcif_pdbx_v50.dic")
+    filter = ItemFilter(include_items={"pdbx_initial_refinement_model.id"})
+    categories = cr.get_categories(categories=["pdbx_initial_refinement_model"], filter=filter)
+
+    assert len(categories) == 1
+    assert len(categories[0].items) == 1
+    assert categories[0].items[0].name == "id"
+
+
+def test_filter_exclude():
+    cr = DictReader(path="./mmcif_pdbx_v50.dic")
+    filter = ItemFilter(exclude_items={"pdbx_initial_refinement_model.id"})
+    categories = cr.get_categories(categories=["pdbx_initial_refinement_model"], filter=filter)
+
+    assert len(categories) == 1
+    assert len(categories[0].items) == 5
+    assert categories[0].items[0].name == "entity_id_list"
+    assert categories[0].items[1].name == "type"
+    assert categories[0].items[2].name == "source_name"
+    assert categories[0].items[3].name == "accession_code"
+    assert categories[0].items[4].name == "details"
