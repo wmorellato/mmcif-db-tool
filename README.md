@@ -82,3 +82,18 @@ This command saves the processed data to `processed_data.cif`.
 - The `--include-items-file` and `--exclude-items-file` options are mutually exclusive, meaning they cannot be used together in the same command.
 - The user must provide either `--categories` or `--categories-file`.
 
+### Mapping
+
+For table info, the mapping below was used:
+
+- description: _category.description
+- name: _category.id
+- indexes: _category_key.name
+
+For column info:
+
+- name: _item.name
+- type: _item_type.code 
+- nullable: _item.mandatory_code
+- default value: _item_default.value
+- foreign key: _item_linked.child_name (not implemented)

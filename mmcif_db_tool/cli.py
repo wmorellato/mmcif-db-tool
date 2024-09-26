@@ -5,9 +5,6 @@ import logging
 from mmcif_db_tool.mmcif_dict import DictReader, ItemFilter
 from mmcif_db_tool.schema_map import SchemaMap, SqlAlchemyOrmPrinter, SqlAlchemyCorePrinter
 
-# logging.basicConfig(level=logging.DEBUG)
-logging.getLogger("mmcif_dict").setLevel(logging.DEBUG)
-
 
 def get_printer(model, include_imports, fp=None):
     if model == "orm":
@@ -34,14 +31,18 @@ def get_filtered_items(path):
 @click.option("--include-items-file", type=click.Path(), help="Path to the file containing the list of categories and items to be included. The file have one 'category_name.item_name' per line. Any item not included in the file will be ignored. Cannot be used with --exclude-items-file.")
 @click.option("--exclude-items-file", type=click.Path(), help="Path to the file containing the list of categories and items to be included. The file have one 'category_name.item_name' per line. Any item not included in the file will be processed. Cannot be used with --include-items-file.")
 @click.option("--output-file", type=click.Path(), help="Path to the output file")
-def process_categories(mmcif_dictionary, categories, categories_file, model, include_items_file, exclude_items_file, output_file):
+@click.option("--verbose", "-v", is_flag=True, help="Print debug messages")
+def process_categories(mmcif_dictionary, categories, categories_file, model, include_items_file, exclude_items_file, output_file, verbose):
     """Create SQLAlchemy models for categories based on the
     input MMCIF_DICTIONARY.
 
     If you want to pass a file with the list of categories through
     the option `--categories-file`, set CATEGORIES to "-".
     """
-    click.echo(f"Processing categories: {categories}")
+    if verbose:
+        logging.basicConfig(level=logging.DEBUG)
+        logging.getLogger("mmcif_dict").setLevel(logging.DEBUG)
+
     cr = DictReader(path=mmcif_dictionary)
 
     if [categories, categories_file].count(None) == 2 or [categories, categories_file].count(None) == 0:

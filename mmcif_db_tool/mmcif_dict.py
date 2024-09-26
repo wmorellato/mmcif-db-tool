@@ -163,16 +163,3 @@ class DictReader:
             return None
 
         return value.strip('"').strip(";").strip()
-
-
-# table infos
-# description: _category.description
-# name: _category.id
-# index: _category_key.name
-
-# column infos
-# name: _item.name
-# type: _item_type.code 
-# nullable: _item.mandatory_code
-# default value: _item_default.value
-# foreign key: _item_linked.child_name
