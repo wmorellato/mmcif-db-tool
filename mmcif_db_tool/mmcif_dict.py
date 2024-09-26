@@ -38,49 +38,42 @@ class DictReader:
         self._doc = cif.read_file(path)
 
     def get_categories(self, categories: list[str]) -> list[Category]:
-        cat_objs = []
+        cat_objs = {}
         block = self._doc.sole_block()
         search_set = set(categories)
         grouped_items = self._find_grouped_items(block, search_set)
 
-        for category in categories:
-            current_category = None
+        for i in block:
+            # first iteration is to create the category objects
+            if i.frame is None:
+                continue
 
-            for i in block:
-                # first iteration is to find the category
-                # I'm assuming that there might be items
-                # that were defined BEFORE the category
-                if i.frame is None:
-                    continue
+            frame = i.frame
+            if frame.name in search_set:
+                logger.debug(f"Found category {frame.name}")
+                cat_objs[frame.name] = self._parse_category(frame)
 
-                frame = i.frame
-                if frame.name == category:
-                    logger.debug(f"Found category {frame.name}")
-                    current_category = self._parse_category(frame)
-                    break
+        for i in block:
+            if i.frame is None:
+                continue
 
-            for i in block:
-                if i.frame is None:
-                    continue
+            frame = i.frame
+            cat_name = self._cat_from_frame(frame.name)
+            if cat_name not in search_set:
+                continue
 
-                frame = i.frame
-                if self._cat_from_frame(frame.name) != current_category.id:
-                    continue
+            if frame.name in grouped_items:
+                logger.debug(f"Found grouped item {frame.name}")
+                cat_objs[cat_name].add_item(grouped_items[frame.name])
+                continue
 
-                if frame.name in grouped_items:
-                    logger.debug(f"Found grouped item {frame.name}")
-                    current_category.add_item(grouped_items[frame.name])
-                    continue
+            if frame.find_value("_item.name"):
+                logger.debug(f"Found item {frame.name}")
+                item = self._parse_item(frame)
+                cat_objs[cat_name].add_item(item)
+                continue
 
-                if frame.find_value("_item.name"):
-                    logger.debug(f"Found item {frame.name}")
-                    item = self._parse_item(frame)
-                    current_category.add_item(item)
-                    continue
-
-            if current_category is not None:
-                cat_objs.append(current_category)
-        return cat_objs
+        return list(cat_objs.values())
 
     def _cat_from_frame(self, frame_name):
         if frame_name is not None:
