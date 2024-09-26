@@ -6,6 +6,23 @@ from dataclasses import dataclass, field
 logger = logging.getLogger(__name__)
 
 
+class ItemFilter:
+    def __init__(self, include_items: list[str] = [], exclude_items: set[str] = []):
+        self.filtered_categories = set()
+        self.include_items = set(include_items)
+        self.exclude_items = set(exclude_items)
+        self._set_filtered_cats()
+
+    def _set_filtered_cats(self):
+        for i in self.include_items:
+            cat, _ = i.split('.')
+            self.filtered_categories.add(cat)
+
+        for i in self.exclude_items:
+            cat, _ = i.split('.')
+            self.filtered_categories.add(cat)
+
+
 @dataclass
 class Item:
     full_name: str
@@ -27,7 +44,17 @@ class Category:
     key_names: list[str]
     items: list[Item] = field(default_factory=list)
 
-    def add_item(self, item: Item):
+    def add_item(self, item: Item, filter: ItemFilter = None):
+        if self.id in filter.filtered_categories:
+            cat_item = f"{self.id}.{item.name}"
+            if filter.include_items and cat_item not in filter.include_items:
+                print(f"Skipping item {cat_item}")
+                return
+
+            if filter.exclude_items and cat_item in filter.exclude_items:
+                print(f"Skipping item {cat_item}")
+                return
+
         if item.name in self.key_names:
             item.index = True
         self.items.append(item)
@@ -37,10 +64,11 @@ class DictReader:
     def __init__(self, path: str) -> None:
         self._doc = cif.read_file(path)
 
-    def get_categories(self, categories: list[str]) -> list[Category]:
+    def get_categories(self, categories: list[str], filter: ItemFilter = None) -> list[Category]:
         cat_objs = {}
-        block = self._doc.sole_block()
         search_set = set(categories)
+        filter = filter or ItemFilter()
+        block = self._doc.sole_block()
         grouped_items = self._find_grouped_items(block, search_set)
 
         for i in block:
@@ -64,13 +92,13 @@ class DictReader:
 
             if frame.name in grouped_items:
                 logger.debug(f"Found grouped item {frame.name}")
-                cat_objs[cat_name].add_item(grouped_items[frame.name])
+                cat_objs[cat_name].add_item(grouped_items[frame.name], filter)
                 continue
 
             if frame.find_value("_item.name"):
                 logger.debug(f"Found item {frame.name}")
                 item = self._parse_item(frame)
-                cat_objs[cat_name].add_item(item)
+                cat_objs[cat_name].add_item(item, filter)
                 continue
 
         return list(cat_objs.values())
