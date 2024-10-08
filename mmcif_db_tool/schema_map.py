@@ -203,7 +203,7 @@ class SchemaMap:
                 itype, istype = self._type_map(item.type_code)
 
                 if not itype:
-                    logger.warning(f"Unknown type for {item.name}: {item.type_code}")
+                    logger.warning(f"Unknown type for {c.id}.{item.name}: {item.type_code}")
                     continue
 
                 column = Column(item.name, itype, istype, index=item.index, nullable=not item.mandatory_code, default=item.default_value)

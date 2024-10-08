@@ -39,6 +39,9 @@ def process_categories(mmcif_dictionary, categories, categories_file, model, inc
     If you want to pass a file with the list of categories through
     the option `--categories-file`, set CATEGORIES to "-".
     """
+    included_items = []
+    excluded_items = []
+
     if verbose:
         logging.basicConfig(level=logging.DEBUG)
         logging.getLogger("mmcif_dict").setLevel(logging.DEBUG)
@@ -53,6 +56,8 @@ def process_categories(mmcif_dictionary, categories, categories_file, model, inc
 
     if categories_file:
         categories = get_cats_from_file(categories_file)
+    else:
+        categories = categories.split(",")
 
     if include_items_file:
         included_items = get_filtered_items(include_items_file)

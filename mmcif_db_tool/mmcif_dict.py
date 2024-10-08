@@ -116,18 +116,37 @@ class DictReader:
                 continue
 
             frame = i.frame
-            if not frame.find_loop("_item.name"):
+            if not frame.find(["_item.name"]) and not frame.find(["_item_linked.child_name"]):
                 continue
+
+            description = cif.as_string(frame.find_value('_item_description.description'))
+            type_code = self._strip_value(frame.find_value('_item_type.code'))
+            default_value = self._strip_value(frame.find_value('_item_default.value'))
 
             table = frame.find(["_item.name", "_item.category_id", "_item.mandatory_code"])
             for row in table:
                 if row[1] in search_set:
                     full_name = cif.as_string(row[0])
                     name = self._strip_value(row[0]).split('.')[1]
-                    description = cif.as_string(frame.find_value('_item_description.description'))
                     mandatory_code = row[2] == 'yes'
-                    type_code = self._strip_value(frame.find_value('_item_type.code'))
-                    default_value = self._strip_value(frame.find_value('_item_default.value'))
+
+                    items[full_name] = Item(full_name, name, description, mandatory_code, type_code, default_value)
+
+            table = frame.find(["_item_linked.child_name", "_item_linked.parent_name"])
+            for row in table:
+                category_id = self._cat_from_frame(self._strip_value(row[0]))
+                if category_id in search_set:
+                    full_name = cif.as_string(row[0])
+                    name = self._strip_value(row[0]).split('.')[1]
+                    mandatory_code = False
+                    parent_name = cif.as_string(row[1])
+
+                    if parent_name != frame.name:
+                        # I'm not sure if this can happen
+                        continue
+
+                    if full_name in items:
+                        continue
 
                     items[full_name] = Item(full_name, name, description, mandatory_code, type_code, default_value)
         return items
