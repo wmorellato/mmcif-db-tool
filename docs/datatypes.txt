@@ -5,7 +5,7 @@ _chem_comp.mon_nstd_flag: ucode, varchar, 10
 _chem_comp.mon_nstd_parent: code, varchar, 20
 _chem_comp.mon_nstd_parent_comp_id: uline, 50
 _chem_comp.number_atoms_all: int, int
-_chem_comp.three_letter_code: uchar5, varcha, 6
+_chem_comp.three_letter_code: uchar5, varchar, 6
 _citation_author.identifier_ORCID: orcid_id, varchar, 20
 _pdbx_database_PDB_obs_spr.date: yyyy-mm-dd:hh:mm, date
 _pdbx_database_PDB_obs_spr.replace_pdb_id: pdbx_PDB_obsoleted_db_id, tinytext
