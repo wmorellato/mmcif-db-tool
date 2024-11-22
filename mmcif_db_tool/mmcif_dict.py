@@ -33,6 +33,16 @@ class Item:
     default_value: str
     index: bool = field(default=False)
 
+    def __post_init__(self):
+        try:
+            if self.default_value:
+                if self.type_code in ("int", "positive_int"):
+                    self.default_value = int(self.default_value)
+                elif self.type_code == "float":
+                    self.default_value = float(self.default_value)
+        except ValueError:
+            logger.warning(f"Could not convert default value {self.default_value} to {self.type_code} for `{self.full_name}`")
+
     def __hash__(self) -> int:
         return hash(self.full_name)
 
@@ -111,44 +121,27 @@ class DictReader:
         # this is to find items defined in loops for
         # categories that have a group
         items = {}
-        for i in block:
-            if i.frame is None:
+        table = block.find_mmcif_category("_pdbx_item_linked_group_list")
+
+        for row in table:
+            cat_name = row["child_category_id"]
+            
+            if cat_name not in search_set:
                 continue
 
-            frame = i.frame
-            if not frame.find(["_item.name"]) and not frame.find(["_item_linked.child_name"]):
-                continue
+            parent_item = cif.as_string(row["parent_name"])
+            parent_frame = block.find_frame(parent_item)
+            child_item = cif.as_string(row["child_name"])
+            child_frame = block.find_frame(child_item)
 
-            description = cif.as_string(frame.find_value('_item_description.description'))
-            type_code = self._strip_value(frame.find_value('_item_type.code'))
-            default_value = self._strip_value(frame.find_value('_item_default.value'))
+            description = cif.as_string(parent_frame.find_value('_item_description.description'))
+            type_code = self._strip_value(parent_frame.find_value('_item_type.code'))
+            default_value = self._strip_value(parent_frame.find_value('_item_default.value'))
+            full_name = child_item
+            name = self._strip_value(full_name).split('.')[1]
+            mandatory_code = child_frame.find_value('_item.mandatory_code') == 'yes'
 
-            table = frame.find(["_item.name", "_item.category_id", "_item.mandatory_code"])
-            for row in table:
-                if row[1] in search_set:
-                    full_name = cif.as_string(row[0])
-                    name = self._strip_value(row[0]).split('.')[1]
-                    mandatory_code = row[2] == 'yes'
-
-                    items[full_name] = Item(full_name, name, description, mandatory_code, type_code, default_value)
-
-            table = frame.find(["_item_linked.child_name", "_item_linked.parent_name"])
-            for row in table:
-                category_id = self._cat_from_frame(self._strip_value(row[0]))
-                if category_id in search_set:
-                    full_name = cif.as_string(row[0])
-                    name = self._strip_value(row[0]).split('.')[1]
-                    mandatory_code = False
-                    parent_name = cif.as_string(row[1])
-
-                    if parent_name != frame.name:
-                        # I'm not sure if this can happen
-                        continue
-
-                    if full_name in items:
-                        continue
-
-                    items[full_name] = Item(full_name, name, description, mandatory_code, type_code, default_value)
+            items[full_name] = Item(full_name, name, description, mandatory_code, type_code, default_value)
         return items
 
     def _parse_item(self, frame):
@@ -181,4 +174,4 @@ class DictReader:
         if value is None:
             return None
 
-        return value.strip('"').strip(";").strip()
+        return value.strip('"').strip(";").strip("'").strip()

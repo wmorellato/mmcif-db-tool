@@ -18,7 +18,7 @@ def test_orm_model():
     with open(output_file.name, "r") as f:
         content = f.read()
         assert "class PdbxInitialRefinementModel(Base):" in content
-        assert "id: Mapped[Optional[int]] = mapped_column(primary_key=True" in content
+        assert "id: Mapped[int] = mapped_column(primary_key=True" in content
 
 
 def test_core_model():
@@ -33,7 +33,6 @@ def test_core_model():
 
     with open(output_file.name, "r") as f:
         content = f.read()
-        print(content)
         assert "chem_comp_angle = Table(" in content
         assert '"chem_comp_angle",' in content
         assert "metadata_obj," in content
@@ -41,4 +40,4 @@ def test_core_model():
         assert 'Column("atom_id_2", String(6), primary_key=True' in content
         assert 'Column("atom_id_3", String(6), primary_key=True' in content
         assert 'Column("comp_id", String(10), primary_key=True' in content
-        assert 'Column("value_angle", Float),' in content
+        assert 'Column("value_angle", Float,' in content

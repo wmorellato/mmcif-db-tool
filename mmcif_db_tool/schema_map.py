@@ -61,7 +61,7 @@ ORM_IMPORTS = [
 ]
 
 CORE_IMPORTS = [
-    "from sqlalchemy import MetaData, Table, Column, Integer, String, Float, DateTime"
+    "from sqlalchemy import MetaData, Table, Column, Integer, String, Float, Date, DateTime"
 ]
 
 ORM_SETUP = ["class Base(DeclarativeBase):", "    pass"]
@@ -109,7 +109,10 @@ class SqlAlchemyCorePrinter:
         if column.nullable:
             params.append(f"nullable={column.nullable}")
         if column.default is not None:
-            params.append(f'default="{column.default!r}"')
+            if isinstance(column.default, str):
+                params.append(f'default="{column.default}"')
+            else:
+                params.append(f'default={column.default}')
 
         params_str = ", ".join(params)
         if params_str:
@@ -138,6 +141,7 @@ class SqlAlchemyCorePrinter:
             self._fp.write(self._table_text(table) + "\n")
             self._fp.write("\n\n")
 
+
 class SqlAlchemyOrmPrinter:
     def __init__(self, fp = sys.stdout, include_imports=False):
         self._fp = fp
@@ -154,7 +158,10 @@ class SqlAlchemyOrmPrinter:
         if column.type == "str":
             params.append(f"type_={column.subtype}")
         if column.default is not None:
-            params.append(f'default="{column.default!r}"')
+            if isinstance(column.default, str):
+                params.append(f'default="{column.default}"')
+            else:
+                params.append(f'default={column.default}')
 
         params_str = ", ".join(params)
         if column.nullable:
